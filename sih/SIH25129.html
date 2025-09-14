@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker</title>
+    <link rel="stylesheet" href="css.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary:  #FF5722;
+            --secondary: #E91E63;
+            --light-bg: rgba(0, 0, 0, 0.1);
+            --dark: #333;
+            --text: #333;
+            --card-bg: rgba(255, 255, 255,0.3);
+        }
+
+        body.dark {
+            --light-bg: #121212;
+            --dark: #f5f5f5;
+            --text: #f5f5f5;
+            --card-bg: #1e1e1e;
+            --primary: #FF7043;
+            --secondary: #F06292;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--light-bg);
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 2rem;;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            margin-right: auto;
+        }
+
+        nav {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin-right: 9rem;
+            
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        nav a.active {
+            text-decoration: underline;
+        }
+
+        #themeToggle {
+            position: absolute;            
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--secondary);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            
+        }
+
+        #menuToggle {
+            display: none;
+           
+            right: 1rem;
+            top: 0.7rem;
+            font-size: 1.5rem;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+
+        /* Mobile responsive nav */
+        @media (max-width: 768px) {
+            nav {
+                display: none;
+                flex-direction: column;
+                background: var(--primary);
+                position: absolute;
+                top: 60px;
+                /* below header */
+                left: 0;
+                width: 100%;
+                padding: 1rem 0;
+            }
+
+            nav.show {
+                display: flex;
+            }
+
+            #menuToggle {
+                display: block;
+                
+            }
+        }
+        .outer{
+            display: flex;
+            flex-direction: column;
+            align-items: center ;
+        }
+
+        .app-layout {
+            display: flex;
+            margin-top: 80px;
+            /* header height */
+            height: calc(100vh - 80px);
+        }
+
+        .user-card-fixed {
+            
+            width: 20%;
+            min-width: 220px;
+            background: var(--card-bg);
+            padding: 1rem;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 80px);
+            border-radius: 1rem;
+            margin: 0 2rem;
+        }
+
+        .main-sections {
+            width: 80%;
+            overflow-y: auto;
+            padding: 1rem 2rem;
+            height: calc(100vh - 80px);
+        }
+
+        section {
+            display: none;
+            margin-bottom: 2rem;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            transition: background 0.3s;
+        }
+
+        form {
+            display: flex;
+            max-width: 400px;
+            flex-direction: column;
+            gap: 1rem;
+            margin: auto;
+        }
+
+        form input {
+            padding: 0.9rem;
+            border: 2px solid var(--primary);
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        form button {
+            padding: 0.9rem;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            cursor: pointer;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            margin: 0.2rem;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background: #ddd;
+            border-radius: 20px;
+            overflow: hidden;
+            height: 25px;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            text-align: center;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            line-height: 25px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 95%;
+            
+            height: 350px;
+        }
+
+        footer {
+            text-align: center;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+            }
+
+            .chart-container{
+                max-width: 30rem;
+            }
+
+            .user-card-fixed {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+                box-shadow: none;
+            }
+
+            .main-sections {
+                width: 100%;
+                height: auto;
+            }
+
+           
+            
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+         <h1>Fitness Tracker</h1>
+        
+       
+       
+        <nav>
+            <a data-target="signup" class="active">Sign Up</a>
+            <a data-target="goals">Goals</a>
+            <a data-target="scheduler">Scheduler</a>
+            <a data-target="dashboard">Dashboard</a>
+            <a data-target="workouts">Workouts</a>
+
+            <a data-target="social">Community</a>
+            <a data-target="gamified">Gamified</a>
+            
+        </nav>
+        <button id="themeToggle">🌙 Dark</button>
+         <button id="menuToggle">☰</button>
+    </header>
+
+    <div class="app-layout">
+        <!-- Fixed User Card -->
+        <aside class="user-card-fixed">
+            <div class="profile-card">
+                <h3>👤 User Profile</h3>
+                <p><strong>Name:</strong> John Doe</p>
+                <p><strong>Level:</strong> 3</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:65%;">65%</div>
+                </div>
+                <button onclick="document.querySelector('[data-target=dashboard]').click()">Go to Dashboard</button>
+            </div>
+        </aside>
+
+        <!-- Scrollable Sections -->
+        <main class="main-sections">
+
+            <section id="signup" class="active">
+                <h2> User Signs Up</h2>
+                <div class="outer">
+                <div class="card">
+                    <form>
+                        <input type="text" placeholder="Name" required>
+                        <input type="email" placeholder="Email" required>
+                        <input type="password" placeholder="Password" required>
+                        <button type="submit">Sign Up</button>
+                    </form>
+                </div>
+                </div>
+            </section>
+
+            <section id="goals">
+                <h2> Set Your Fitness Goals</h2>
+                <div class="card">
+                    <h3>🏋️ Build Muscle</h3>
+                    <p>Gain strength with structured workouts and progressive overload.</p>
+                    <button class="goal-btn" data-goal="muscle">Select</button>
+                </div>
+
+                <div class="card">
+                    <h3>🔥 Burn Fat</h3>
+                    <p>Follow fat-burning workouts and calorie tracking to hit your target weight.</p>
+                    <button class="goal-btn" data-goal="fat">Select</button>
+                </div>
+
+                <div class="card">
+                    <h3>🚶 Increase Stamina</h3>
+                    <p>Boost endurance with cardio challenges and step tracking.</p>
+                    <button class="goal-btn" data-goal="stamina">Select</button>
+                </div>
+
+                <div class="card">
+                    <h3>🧘 Improve Flexibility</h3>
+                    <p>Stretching routines and yoga plans to stay injury-free and mobile.</p>
+                    <button class="goal-btn" data-goal="flexibility">Select</button>
+                </div>
+            </section>
+
+            <section id="scheduler">
+                <h2> Scheduler Creates Workout Plan and Nutrition Plans</h2>
+                <div class="card">
+                    <h3>📅 Weekly Plan Generator</h3>
+                    <p>Auto-adjusts intensity and syncs with your calendar.</p>
+                </div>
+                <div class="card">
+                    <h3>📅 Weekly Plan Generator</h3>
+                    <p>Based on your selected goals, the scheduler will generate a personalized weekly routine with the
+                        right mix of cardio, strength, and recovery.</p>
+                    <ul>
+                        <li>✔️ Auto-adjusts intensity as you progress</li>
+                        <li>✔️ Includes reminders and rest days</li>
+                        <li>✔️ Sync with your calendar</li>
+                    </ul>
+                    <button>Generate Plan</button>
+                </div>
+            </section>
+
+            <section id="workouts">
+                <h2> Perform Micro-Workouts</h2>
+                <div class="card">
+                    <h3>💪 Today's Quick Workouts</h3>
+                    <ul>
+                        <li>10-min HIIT</li>
+                        <li>15-min Strength</li>
+                        <li>5-min Stretch</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="dashboard">
+                <h2> Dashboard & Progress</h2>
+                <div class="card">
+                    <h3>Points & Badges</h3><span class="badge">🔥 7-Day Streak</span><span class="badge">🏅
+                        Starter</span>
+                </div>
+                <div class="card chart-container"><canvas id="progressChart"></canvas></div>
+
+                <div class="card">
+                    <div class="external">
+        <div class="bmi-info">
+            <h1>Body Mass Index</h1>
+            <h2>What is BMI?</h2>
+            <p>Body Mass Index (BMI) is a simple calculation using a person's height and weight. The formula is BMI =
+                kg/m² where kg is a person's weight in kilograms and m² is their height in meters squared. BMI is a
+                useful tool to categorize individuals into different weight categories that may indicate potential
+                health risks.</p>
+            
+            
+        </div>
+
+        <div id="caliculator">
+            <h1>BMI Calculator</h1>
+            <form id="bmi-form">
+                <label for="weight" >Weight (kg):</label>
+                <input type="number" id="weight" placeholder="weight" required>
+                <br>
+                <label for="height">Height (cm):</label>
+                <input type="number" id="height" placeholder="height" required>
+                <br>
+                <button type="submit">Calculate BMI</button>
+            </form>
+            <div id="result"></div>
+        </div>
+        <script>
+            
+  document.getElementById('bmi-form').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const weight = parseFloat(document.getElementById('weight').value);
+                const height = parseFloat(document.getElementById('height').value) / 100; // convert cm to meters
+                if (height > 0) {
+                    const bmi = weight / (height * height);
+                    let category = '';
+                    if (bmi < 18.5) {
+                        category = 'Underweight';
+                    } else if (bmi < 24.9) {
+                        category = 'Normal weight';
+                    } else if (bmi < 29.9) {
+                        category = 'Overweight';
+                    } else {
+                        category = 'Obesity';
+                    }
+                    document.getElementById('result').innerText = `Your BMI is ${bmi.toFixed(2)} (${category})`;
+                } else {
+                    document.getElementById('result').innerText = 'Please enter a valid height.';
+                }
+            });
+        </script>
+        <!--caliculator-->
+    </div>
+                </div>
+
+            </section>
+
+            <section id="social">
+                <h2> Community & Challenges</h2>
+                <div class="card">
+                    <h3>🌍 Connect with Others</h3>
+                    <p>Join group challenges and share progress.</p>
+                </div>
+                <div class="card">
+                    <h3>🌍 Connect with Others</h3>
+                    <p>Stay motivated with group challenges, leaderboards, and progress sharing.</p>
+                    <ul>
+                        <li>🏆 Weekly Step Challenge</li>
+                        <li>🔥 Fat-Burn Bootcamp</li>
+                        <li>💬 Share tips & progress in the forum</li>
+                    </ul>
+                    <button>Join a Challenge</button>
+                </div>
+            </section>
+
+            <section id="gamified">
+                <h2> Gamified Fitness</h2>
+                <div class="card">
+                    <h3>🎯 Daily Challenges</h3>
+                    <p>Complete daily fitness challenges to earn points and keep your streak alive.</p>
+                    <ul>
+                        <li>✅ 8,000 steps today (+20 pts)</li>
+                        <li>✅ Drink 2L water (+10 pts)</li>
+                        <li>🏋️ Finish strength workout (+30 pts)</li>
+                    </ul>
+                    <button>Start Today’s Challenge</button>
+                </div>
+
+                <div class="card">
+                    <h3>🏅 Badges & Achievements</h3>
+                    <p>Unlock badges as you progress and showcase your fitness journey.</p>
+                    <span class="badge">🔥 7-Day Streak</span>
+                    <span class="badge">💧 Hydration Master</span>
+                    <span class="badge">🏋️ Strength Builder</span>
+                </div>
+
+                <div class="card">
+                    <h3>📊 Leaderboard</h3>
+                    <p>Compete with friends and community members.</p>
+                    <ol>
+                        <li>🥇 Alex — 1200 pts</li>
+                        <li>🥈 Riya — 1100 pts</li>
+                        <li>🥉 John — 950 pts</li>
+                    </ol>
+                    <button>View Full Leaderboard</button>
+                </div>
+                <div class="card">
+                    <h3>⚡ Your Fitness Level</h3>
+                    <p>Level 3: Fitness Warrior</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 65%;">65%</div>
+                    </div>
+                    <p>XP: 650 / 1000</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>© 2025 Fitness Tracker. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const toggleBtn = document.getElementById("themeToggle");
+        const nav = document.querySelector("nav");
+        const navLinks = document.querySelectorAll("nav a");
+        const menuToggle = document.getElementById("menuToggle");
+        const sections = document.querySelectorAll("section");
+
+        toggleBtn.addEventListener("click", () => { document.body.classList.toggle("dark"); toggleBtn.textContent = document.body.classList.contains("dark") ? "☀️ Light" : "🌙 Dark"; });
+        menuToggle.addEventListener("click", () => { nav.classList.toggle("show"); });
+        navLinks.forEach(link => { link.addEventListener("click", () => { navLinks.forEach(l => l.classList.remove("active")); sections.forEach(s => s.classList.remove("active")); link.classList.add("active"); document.getElementById(link.dataset.target).classList.add("active"); if (window.innerWidth <= 768) { nav.classList.remove("show"); } }); });
+
+        let progressChart;
+        function createChart(labels, datasets) {
+            const ctx = document.getElementById("progressChart").getContext("2d");
+            if (progressChart) progressChart.destroy();
+            progressChart = new Chart(ctx, {
+                type: "line",
+                data: { labels, datasets },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+        function updateChart() {
+            let labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+            let datasets = [
+                { label: "Workouts", data: [1, 2, 1, 3, 2, 4, 5], borderColor: "#FF5722", backgroundColor: "rgba(255,87,34,0.2)", fill: true, tension: 0.4 },
+                { label: "Calories Burned", data: [200, 350, 400, 500, 600, 700, 800], borderColor: "#E91E63", backgroundColor: "rgba(233,30,99,0.2)", fill: true, tension: 0.4 },
+                { label: "Steps Taken", data: [3000, 5000, 7000, 8500, 9000, 10000, 12000], borderColor: "#4CAF50", backgroundColor: "rgba(76,175,80,0.2)", fill: true, tension: 0.4 }
+            ];
+            createChart(labels, datasets);
+        }
+        updateChart();
+    </script>
+</body>
+
+</html>
